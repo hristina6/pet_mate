@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Најавата не успеа. Обидете се повторно.'),
+            content: Text('Login failed. Please try again!'),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -89,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               SizedBox(height: 40),
               Text(
-                'Добредојдовте',
+                'Welcome',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -98,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               SizedBox(height: 8),
               Text(
-                'Најавете се во вашата сметка',
+                'Log in to your account.',
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey[600],
@@ -112,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextFormField(
                       controller: emailController,
                       decoration: InputDecoration(
-                        labelText: 'Е-маил',
+                        labelText: 'E-mail',
                         prefixIcon: Icon(Icons.email_outlined),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -123,10 +123,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Внесете е-маил';
+                          return 'Enter your e-mail';
                         }
                         if (!value.contains('@')) {
-                          return 'Внесете валиден е-маил';
+                          return 'Enter a valid e-mail';
                         }
                         return null;
                       },
@@ -135,7 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextFormField(
                       controller: passwordController,
                       decoration: InputDecoration(
-                        labelText: 'Лозинка',
+                        labelText: 'Password',
                         prefixIcon: Icon(Icons.lock_outline_rounded),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -158,10 +158,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       obscureText: obscurePassword,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Внесете лозинка';
+                          return 'Enter password';
                         }
                         if (value.length < 6) {
-                          return 'Лозинката треба да има најмалку 6 карактери';
+                          return 'The password must have at least 6 characters.';
                         }
                         return null;
                       },
@@ -200,7 +200,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         onPressed: login,
                         child: Text(
-                          'Најава',
+                          'Log in',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -213,11 +213,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Немате сметка? ',
+                          "Don't have an account?",
                           style: TextStyle(color: Colors.grey[600]),
                         ),
-                        GestureDetector(
-                          onTap: () {
+                        SizedBox(width: 4),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          onPressed: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -226,10 +231,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             );
                           },
                           child: Text(
-                            'Регистрирај се',
+                            'Register here',
                             style: TextStyle(
                               color: Colors.orange[700],
                               fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline,
+                              decorationColor: Colors.orange[700],
                             ),
                           ),
                         ),
