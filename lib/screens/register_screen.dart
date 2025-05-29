@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pet_mate_frontend/screens/register_success_screen.dart';
 import '../services/auth_service.dart';
 import 'home_screen.dart';
 
@@ -51,11 +52,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     try {
       final user = await authService.register(name, email, password);
 
-      // Navigate to HomeScreen after successful registration
+      // Navigate to Success Screen after successful registration
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => HomeScreen(userName: user.name),
+          builder: (context) => const RegistrationSuccessScreen(),
         ),
       );
     } catch (e) {
@@ -68,6 +69,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       isLoading = false;
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
