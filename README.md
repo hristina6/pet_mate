@@ -1,16 +1,12 @@
-# pet_mate_frontend
+# PetMate  
+PetMate is a mobile application that helps pet owners find suitable mating partners for their pets of the same breed. Additionally, it features a forum where users can ask questions, share experiences, and post pictures of their pets.
 
-A new Flutter project.
+## Features
+- **Matchmaking:** Connect with the pets owner, request a match
+- **Community Forum:** Users can post questions, share pet photos and interact with other pet owners 
+- **Profile:** User can create and manage detailed profiles for their pets
+- **Secure Authentication:** System powered by Laravel Sanctum
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+  ## Technologies
+  - Backend: PHP Laravel Framework
+  - Frontend: Dart
