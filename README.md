@@ -7,6 +7,6 @@ PetMate is a mobile application that helps pet owners find suitable mating partn
 - **Profile:** User can create and manage detailed profiles for their pets
 - **Secure Authentication:** System powered by Laravel Sanctum
 
-  ## Technologies
-  - Backend: PHP Laravel Framework
-  - Frontend: Dart
+## Technologies
+- Backend: PHP Laravel Framework
+- Frontend: Dart
