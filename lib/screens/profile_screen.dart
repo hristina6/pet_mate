@@ -1,7 +1,9 @@
 // screens/profile_screen.dart
 import 'package:flutter/material.dart';
 import '../models/pet.dart';
+import '../models/post.dart';
 import '../services/pet_service.dart';
+import '../services/post_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String userName;
@@ -15,23 +17,34 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final PetService _petService = PetService();
+  final PostService _postService = PostService();
+
   late Future<List<Pet>> _userPetsFuture;
+  late Future<List<Post>> _userPostsFuture;
   bool _isLoading = false;
+  int _selectedTab = 0; // 0 for Pets, 1 for Posts
 
   @override
   void initState() {
     super.initState();
-    _userPetsFuture = _petService.getPets(userId: widget.userId);
+    _loadData();
   }
 
-  Future<void> _refreshPets() async {
+  void _loadData() {
+    _userPetsFuture = _petService.getPets(userId: widget.userId);
+    _userPostsFuture = _postService.getUserPosts(widget.userId);
+  }
+
+  Future<void> _refreshData() async {
     setState(() {
       _isLoading = true;
     });
     try {
       final pets = await _petService.getPets(userId: widget.userId);
+      final posts = await _postService.getUserPosts(widget.userId);
       setState(() {
         _userPetsFuture = Future.value(pets);
+        _userPostsFuture = Future.value(posts);
       });
     } finally {
       setState(() {
@@ -46,95 +59,169 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         title: Text('${widget.userName}\'s Profile'),
       ),
-      body: RefreshIndicator(
-        onRefresh: _refreshPets,
-        child: FutureBuilder<List<Pet>>(
-          future: _userPetsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return _buildEmptyState();
-            } else {
-              return _buildPetsList(snapshot.data!);
-            }
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      body: Column(
         children: [
-          const Icon(Icons.pets, size: 80, color: Colors.grey),
-          const SizedBox(height: 20),
-          const Text(
-            'No pets yet',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          // User info header
+          Container(
+            padding: const EdgeInsets.all(20),
+            color: Colors.orange[50],
+            child: Row(
+              children: [
+                const CircleAvatar(
+                  radius: 40,
+                  child: Icon(Icons.person, size: 40),
+                ),
+                const SizedBox(width: 16),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.userName,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    FutureBuilder<List<Pet>>(
+                      future: _userPetsFuture,
+                      builder: (context, snapshot) {
+                        final petCount = snapshot.hasData ? snapshot.data!.length : 0;
+                        return FutureBuilder<List<Post>>(
+                          future: _userPostsFuture,
+                          builder: (context, postSnapshot) {
+                            final postCount = postSnapshot.hasData ? postSnapshot.data!.length : 0;
+                            return Text(
+                              '$petCount pets • $postCount posts',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 10),
-          Text(
-            '${widget.userName} hasn\'t added any pets',
-            style: const TextStyle(fontSize: 16, color: Colors.grey),
+
+          // Tab selection
+          Container(
+            color: Colors.grey[100],
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildTabButton(0, 'Pets', Icons.pets),
+                ),
+                Expanded(
+                  child: _buildTabButton(1, 'Posts', Icons.article),
+                ),
+              ],
+            ),
+          ),
+
+          // Content area
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _refreshData,
+              child: _selectedTab == 0
+                  ? _buildPetsContent()
+                  : _buildPostsContent(),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPetsList(List<Pet> pets) {
-    return Column(
-      children: [
-        // User info
-        Container(
-          padding: const EdgeInsets.all(20),
-          color: Colors.orange[50],
-          child: Row(
-            children: [
-              const CircleAvatar(
-                radius: 40,
-                child: Icon(Icons.person, size: 40),
-              ),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.userName,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    '${pets.length} pet${pets.length == 1 ? '' : 's'}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+  Widget _buildTabButton(int tabIndex, String label, IconData icon) {
+    return TextButton(
+      onPressed: () {
+        setState(() {
+          _selectedTab = tabIndex;
+        });
+      },
+      style: TextButton.styleFrom(
+        foregroundColor: _selectedTab == tabIndex ? Colors.orange : Colors.grey,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 20),
+          const SizedBox(width: 8),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
 
-        // Pets list
-        Expanded(
-          child: ListView.builder(
-            itemCount: pets.length,
+  Widget _buildPetsContent() {
+    return FutureBuilder<List<Pet>>(
+      future: _userPetsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return _buildEmptyState('pets', Icons.pets);
+        } else {
+          return ListView.builder(
+            itemCount: snapshot.data!.length,
             itemBuilder: (context, index) {
-              final pet = pets[index];
+              final pet = snapshot.data![index];
               return _buildPetCard(pet);
             },
+          );
+        }
+      },
+    );
+  }
+
+  Widget _buildPostsContent() {
+    return FutureBuilder<List<Post>>(
+      future: _userPostsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return _buildEmptyState('posts', Icons.article);
+        } else {
+          return ListView.builder(
+            itemCount: snapshot.data!.length,
+            itemBuilder: (context, index) {
+              final post = snapshot.data![index];
+              return _buildPostCard(post);
+            },
+          );
+        }
+      },
+    );
+  }
+
+  Widget _buildEmptyState(String type, IconData icon) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 80, color: Colors.grey),
+          const SizedBox(height: 20),
+          Text(
+            'No $type yet',
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
-        ),
-      ],
+          const SizedBox(height: 10),
+          Text(
+            '${widget.userName} hasn\'t created any $type',
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+        ],
+      ),
     );
   }
 
@@ -165,6 +252,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
         trailing: Chip(
           label: Text(pet.gender),
           backgroundColor: Colors.orange[50],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPostCard(Post post) {
+    return Card(
+      margin: const EdgeInsets.all(8.0),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        title: Text(
+          post.title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 8),
+            Text(
+              post.body.length > 100
+                  ? '${post.body.substring(0, 100)}...'
+                  : post.body,
+              style: const TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Chip(
+                  label: Text(post.categoryName),
+                  backgroundColor: Colors.blue[50],
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${post.createdAt.day}/${post.createdAt.month}/${post.createdAt.year}',
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

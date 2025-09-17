@@ -6,12 +6,17 @@ import '../models/pet.dart';
 class PetService {
   final String baseUrl = 'http://10.0.2.2:8000/api/v1';
 
-  Future<List<Pet>> getPets({int? userId}) async {
+  Future<List<Pet>> getPets({int? userId, String? type}) async {
     try {
-      String url = '$baseUrl/pets';
+      String url = '$baseUrl/pets?';
 
-      if (userId != null) {
-        url += '?user_id=$userId';
+      // Додади параметри за филтрирање
+      final params = [];
+      if (userId != null) params.add('user_id=$userId');
+      if (type != null) params.add('type=$type');
+
+      if (params.isNotEmpty) {
+        url += params.join('&');
       }
 
       print('🔄 Fetching pets from: $url');
@@ -51,7 +56,6 @@ class PetService {
     }
   }
 
-
   Future<bool> createPet(Map<String, dynamic> petData) async {
     try {
       print('🔄 Creating pet with data: $petData');
@@ -66,13 +70,12 @@ class PetService {
       );
 
       print('📡 Create Pet Status: ${response.statusCode}');
-      print('📦 Create Pet Response: ${response.body}'); // ✅ ОВА Е КЛУЧНО
+      print('📦 Create Pet Response: ${response.body}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         print('✅ Pet created successfully');
         return true;
       } else {
-        // Детален error handling за 422
         if (response.statusCode == 422) {
           final errorData = json.decode(response.body);
           print('❌ Validation errors: $errorData');

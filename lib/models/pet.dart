@@ -9,6 +9,7 @@ class Pet {
   final String imageUrl;
   final String user;
   final DateTime createdAt;
+  final String type;
 
   Pet({
     required this.id,
@@ -20,6 +21,7 @@ class Pet {
     required this.imageUrl,
     required this.user,
     required this.createdAt,
+    required this.type,
   });
 
   factory Pet.fromJson(Map<String, dynamic> json) {
@@ -37,6 +39,7 @@ class Pet {
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : DateTime.now(),
+      type: json['type'] ?? 'UNKNOWN',
     );
   }
 

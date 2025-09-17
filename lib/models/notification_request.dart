@@ -1,22 +1,31 @@
+// screens/notifications_screen.dart
 import 'package:flutter/material.dart';
-import '../models/notification_request.dart';
+
+class NotificationRequest {
+  final String name;
+  final String contact;
+  bool accepted;
+
+  NotificationRequest({
+    required this.name,
+    required this.contact,
+    this.accepted = false,
+  });
+}
 
 class NotificationsScreen extends StatefulWidget {
-  const NotificationsScreen({super.key}); // Без параметри
+  const NotificationsScreen({super.key});
 
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  // Мок ап листа внатре
   final List<NotificationRequest> _notifications = [
     NotificationRequest(name: 'Kiki', contact: '+123456789'),
     NotificationRequest(name: 'Leo', contact: '+987654321'),
     NotificationRequest(name: 'Milo', contact: '+192837465'),
   ];
-
-  final List<NotificationRequest> acceptedRequests = [];
 
   @override
   Widget build(BuildContext context) {
@@ -25,19 +34,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       itemCount: _notifications.length,
       itemBuilder: (context, index) {
         final notification = _notifications[index];
-        final isAccepted = acceptedRequests.contains(notification);
 
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
             title: Text('${notification.name} wants to send request for contacting'),
-            subtitle: isAccepted ? Text('Contact: ${notification.contact}') : null,
-            trailing: isAccepted
+            subtitle: notification.accepted ? Text('Contact: ${notification.contact}') : null,
+            trailing: notification.accepted
                 ? const Icon(Icons.check, color: Colors.green)
                 : TextButton(
               onPressed: () {
                 setState(() {
-                  acceptedRequests.add(notification);
+                  notification.accepted = true;
                 });
               },
               child: const Text('Accept'),

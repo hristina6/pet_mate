@@ -4,8 +4,9 @@ import '../services/pet_service.dart';
 
 class AddPetScreen extends StatefulWidget {
   final int userId;
+  final String userName;
 
-  const AddPetScreen({super.key, required this.userId});
+  const AddPetScreen({super.key, required this.userId, required this.userName});
 
   @override
   State<AddPetScreen> createState() => _AddPetScreenState();
@@ -21,7 +22,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
   final _genderController = TextEditingController();
   String _pedigree = 'false';
   String _imageUrl = '';
-  String _petType = 'ADVERTISEMENT';
+  String _petType = 'BREEDING'; // Default to BREEDING
   bool _isLoading = false;
 
   @override
@@ -61,12 +62,12 @@ class _AddPetScreenState extends State<AddPetScreen> {
                 DropdownButtonFormField<String>(
                   value: _petType,
                   decoration: const InputDecoration(
-                    labelText: 'Listing Type', // Промени го името
+                    labelText: 'Listing Type',
                     border: OutlineInputBorder(),
                   ),
                   items: const [
-                    DropdownMenuItem(value: 'ADVERTISEMENT', child: Text('For Adoption/Sale')),
                     DropdownMenuItem(value: 'BREEDING', child: Text('For Breeding')),
+                    DropdownMenuItem(value: 'ADVERTISEMENT', child: Text('For Adoption/Sale')),
                   ],
                   onChanged: (value) {
                     setState(() {
@@ -190,23 +191,22 @@ class _AddPetScreenState extends State<AddPetScreen> {
       });
 
       try {
-        // Подготви ги податоците
+        // Подготви ги податоците за pet
         final petData = {
           'name': _nameController.text,
           'breed': _breedController.text,
           'age': int.parse(_ageController.text),
           'gender': _genderController.text.toUpperCase(),
           'has_pedigree': _pedigree == 'true',
-          'image': _imageUrl.isNotEmpty ? _imageUrl : 'https://via.placeholder.com/640x480.png/0077ff?text=Pet+Image',
+          'image': _imageUrl.isNotEmpty ? _imageUrl : '',
           'user_id': widget.userId,
           'type': _petType,
         };
 
-        // Испрати го барањето до API
+        // Испрати го барањето за pet до API
         final response = await _petService.createPet(petData);
 
         if (response) {
-          // Успешно додадено
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Pet added successfully!')),
           );
