@@ -1,28 +1,32 @@
-// screens/profile_screen.dart
+// screens/other_user_profile_screen.dart
 import 'package:flutter/material.dart';
 import '../models/pet.dart';
 import '../models/post.dart';
 import '../services/pet_service.dart';
 import '../services/post_service.dart';
-import 'pet_details_screen.dart'; // ADD THIS IMPORT
+import 'pet_details_screen.dart';
 
-class ProfileScreen extends StatefulWidget {
+class OtherUserProfileScreen extends StatefulWidget {
   final String userName;
-  final int userId;
+  final String currentUserName;
 
-  const ProfileScreen({super.key, required this.userName, required this.userId});
+  const OtherUserProfileScreen({
+    super.key,
+    required this.userName,
+    required this.currentUserName,
+  });
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  State<OtherUserProfileScreen> createState() => _OtherUserProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
   final PetService _petService = PetService();
   final PostService _postService = PostService();
 
-  late Future<List<Pet>> _userPetsFuture;
-  late Future<List<Post>> _userPostsFuture;
-  bool _isLoading = false;
+  List<Pet> _userPets = [];
+  List<Post> _userPosts = [];
+  bool _isLoading = true;
   int _selectedTab = 0; // 0 for Pets, 1 for Posts
 
   // Modern color scheme
@@ -38,27 +42,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadData();
   }
 
-  void _loadData() {
-    _userPetsFuture = _petService.getPets(userId: widget.userId);
-    _userPostsFuture = _postService.getUserPosts(widget.userId);
-  }
-
-  Future<void> _refreshData() async {
+  Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
     });
+
     try {
-      final pets = await _petService.getPets(userId: widget.userId);
-      final posts = await _postService.getUserPosts(widget.userId);
+      // Load all pets and filter by username
+      final allPets = await _petService.getPets();
+      final allPosts = await _postService.getPosts();
+
       setState(() {
-        _userPetsFuture = Future.value(pets);
-        _userPostsFuture = Future.value(posts);
+        _userPets = allPets.where((pet) => pet.user == widget.userName).toList();
+        _userPosts = allPosts.where((post) => post.userName == widget.userName).toList();
       });
+    } catch (e) {
+      print('Error loading user data: $e');
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _refreshData() async {
+    await _loadData();
   }
 
   @override
@@ -76,13 +84,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               color: _primaryColor.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.arrow_back_ios_new_rounded,
-                color: _primaryColor, size: 20),
+            child: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: _primaryColor,
+              size: 20,
+            ),
           ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Profile',
+          widget.userName,
           style: TextStyle(
             color: _textColor,
             fontWeight: FontWeight.w700,
@@ -91,7 +102,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         centerTitle: true,
       ),
-      body: Column(
+      body: _isLoading
+          ? _buildLoadingState()
+          : Column(
         children: [
           // Modern User Info Header - Centered
           Container(
@@ -132,7 +145,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   child: Center(
                     child: Text(
-                      widget.userName.isNotEmpty ? widget.userName[0].toUpperCase() : 'U',
+                      widget.userName.isNotEmpty
+                          ? widget.userName[0].toUpperCase()
+                          : 'U',
                       style: const TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.bold,
@@ -155,25 +170,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 8),
 
                 // Stats below the name
-                FutureBuilder<List<Pet>>(
-                  future: _userPetsFuture,
-                  builder: (context, snapshot) {
-                    final petCount = snapshot.hasData ? snapshot.data!.length : 0;
-                    return FutureBuilder<List<Post>>(
-                      future: _userPostsFuture,
-                      builder: (context, postSnapshot) {
-                        final postCount = postSnapshot.hasData ? postSnapshot.data!.length : 0;
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _buildStatItem(petCount, 'Pets'),
-                            const SizedBox(width: 24),
-                            _buildStatItem(postCount, 'Posts'),
-                          ],
-                        );
-                      },
-                    );
-                  },
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildStatItem(_userPets.length, 'Pets'),
+                    const SizedBox(width: 24),
+                    _buildStatItem(_userPosts.length, 'Posts'),
+                  ],
                 ),
               ],
             ),
@@ -196,10 +199,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Row(
               children: [
                 Expanded(
-                  child: _buildRoundedTabButton(0, 'My Pets', Icons.pets_rounded),
+                  child: _buildRoundedTabButton(
+                    0,
+                    'Their Pets',
+                    Icons.pets_rounded,
+                  ),
                 ),
                 Expanded(
-                  child: _buildRoundedTabButton(1, 'My Posts', Icons.article_rounded),
+                  child: _buildRoundedTabButton(
+                    1,
+                    'Their Posts',
+                    Icons.article_rounded,
+                  ),
                 ),
               ],
             ),
@@ -243,7 +254,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildRoundedTabButton(int tabIndex, String label, IconData icon) {
+  Widget _buildRoundedTabButton(
+      int tabIndex,
+      String label,
+      IconData icon,
+      ) {
     final bool isSelected = _selectedTab == tabIndex;
 
     return GestureDetector(
@@ -297,49 +312,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildPetsContent() {
-    return FutureBuilder<List<Pet>>(
-      future: _userPetsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildLoadingState();
-        } else if (snapshot.hasError) {
-          return _buildErrorState('Failed to load pets');
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return _buildEmptyState('pets', Icons.pets_rounded, 'No pets added yet');
-        } else {
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: snapshot.data!.length,
-            itemBuilder: (context, index) {
-              final pet = snapshot.data![index];
-              return _buildModernPetCard(pet);
-            },
-          );
-        }
+    if (_userPets.isEmpty) {
+      return _buildEmptyState(
+        'pets',
+        Icons.pets_rounded,
+        'No pets added yet',
+        'This user hasn\'t added any pets yet',
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _userPets.length,
+      itemBuilder: (context, index) {
+        final pet = _userPets[index];
+        return _buildModernPetCard(pet);
       },
     );
   }
 
   Widget _buildPostsContent() {
-    return FutureBuilder<List<Post>>(
-      future: _userPostsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildLoadingState();
-        } else if (snapshot.hasError) {
-          return _buildErrorState('Failed to load posts');
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return _buildEmptyState('posts', Icons.article_rounded, 'No posts created yet');
-        } else {
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: snapshot.data!.length,
-            itemBuilder: (context, index) {
-              final post = snapshot.data![index];
-              return _buildModernPostCard(post);
-            },
-          );
-        }
+    if (_userPosts.isEmpty) {
+      return _buildEmptyState(
+        'posts',
+        Icons.article_rounded,
+        'No posts created yet',
+        'This user hasn\'t created any posts yet',
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _userPosts.length,
+      itemBuilder: (context, index) {
+        final post = _userPosts[index];
+        return _buildModernPostCard(post);
       },
     );
   }
@@ -352,7 +359,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           CircularProgressIndicator(color: _primaryColor),
           const SizedBox(height: 16),
           Text(
-            'Loading...',
+            'Loading profile...',
             style: TextStyle(
               color: _hintColor,
               fontSize: 16,
@@ -363,39 +370,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildErrorState(String message) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline_rounded,
-            size: 64,
-            color: Colors.red[300],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            message,
-            style: TextStyle(
-              color: _hintColor,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _refreshData,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _primaryColor,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Try Again'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(String type, IconData icon, String message) {
+  Widget _buildEmptyState(
+      String type,
+      IconData icon,
+      String title,
+      String subtitle,
+      ) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -415,7 +395,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            message,
+            title,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -425,7 +405,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Start by adding your first $type',
+            subtitle,
             style: TextStyle(
               fontSize: 14,
               color: _hintColor,
@@ -450,7 +430,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       typeColor = Colors.red;
     }
 
-    // Format the date like in HomeScreen
+    // Format the date
     final String formattedDate = _formatDate(pet.createdAt);
 
     return Card(
@@ -461,7 +441,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image section with contact icon overlay
+          // Image section
           Stack(
             children: [
               ClipRRect(
@@ -481,9 +461,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
-              // Contact/Connection icon in top-right corner
-          ]),
-
+            ],
+          ),
 
           // Text content section
           Padding(
@@ -530,11 +509,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
 
-                      // Date information (just like HomeScreen)
+                      // Date information
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.calendar_today, size: 14, color: Colors.grey[500]),
+                          Icon(
+                            Icons.calendar_today,
+                            size: 14,
+                            color: Colors.grey[500],
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             formattedDate,
@@ -553,7 +536,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    // 60-degree arrow icon
+                    // 60-degree arrow icon (same as ProfileScreen)
                     Transform.rotate(
                       angle: 0.174533, // 60 degrees in radians
                       child: Container(
@@ -570,7 +553,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             size: 20,
                             color: Colors.white,
                           ),
-                          onPressed: () => _showPetDetails(context, pet),
+                          onPressed: () => _viewPetDetails(pet),
                           padding: EdgeInsets.zero,
                         ),
                       ),
@@ -578,7 +561,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 8),
                     // Type badge moved below arrow
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: typeColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
@@ -726,17 +712,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // UPDATED METHOD: Navigates to PetDetailsScreen instead of showing a dialog
-  void _showPetDetails(BuildContext context, Pet pet) {
+  void _viewPetDetails(Pet pet) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => PetDetailsScreen(
           pet: pet,
-          currentUserName: widget.userName,
+          currentUserName: widget.currentUserName,
         ),
       ),
     );
   }
-}
 
+
+}

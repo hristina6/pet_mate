@@ -4,7 +4,7 @@ import '../models/user.dart';
 
 class AuthService {
   final String baseUrl = 'http://10.0.2.2:8000/api/v1/auth';
-  String? token; // Токен за auth
+  String? token;
 
   User? _currentUser;
 
@@ -25,7 +25,7 @@ class AuthService {
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
-      token = json['token']; // зачувај го токенот
+      token = json['token'];
       return User.fromJson(json);
     } else {
       throw Exception('Failed to login: ${response.body}');
@@ -46,7 +46,7 @@ class AuthService {
 
     if (response.statusCode == 201 || response.statusCode == 200) {
       final json = jsonDecode(response.body);
-      token = json['token']; // зачувај го токенот
+      token = json['token'];
       return User.fromJson(json);
     } else {
       throw Exception('Failed to register: ${response.body}');

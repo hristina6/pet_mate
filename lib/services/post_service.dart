@@ -42,7 +42,9 @@ class PostService {
       if (response.statusCode == 200) {
         final dynamic data = json.decode(response.body);
         final List<dynamic> postsList = _extractDataFromResponse(data);
-        return postsList.map((json) => Post.fromJson(json)).toList();
+        List<Post> posts = postsList.map((json) => Post.fromJson(json)).toList();
+        posts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        return posts;
       } else {
         throw Exception('Failed to load posts: ${response.statusCode} - ${response.body}');
       }

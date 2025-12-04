@@ -8,8 +8,9 @@ class Pet {
   final String gender;
   final String imageUrl;
   final String user;
-  final DateTime createdAt;
   final String type;
+  final String location;
+  final DateTime createdAt;
 
   Pet({
     required this.id,
@@ -20,8 +21,9 @@ class Pet {
     required this.gender,
     required this.imageUrl,
     required this.user,
-    required this.createdAt,
     required this.type,
+    required this.location,
+    required this.createdAt,
   });
 
   factory Pet.fromJson(Map<String, dynamic> json) {
@@ -36,10 +38,11 @@ class Pet {
       gender: json['gender'] ?? 'Unknown',
       imageUrl: json['image'] ?? '',
       user: _extractUserName(json),
+      type: json['type'] ?? 'UNKNOWN',
+      location: json['location'] ?? '',
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : DateTime.now(),
-      type: json['type'] ?? 'UNKNOWN',
     );
   }
 
